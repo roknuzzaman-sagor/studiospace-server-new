@@ -123,7 +123,5 @@ curl -b cookies.txt https://studiospace-server-new.vercel.app/api/bookings/my-bo
 ```bash
 npm run dev    # dev with nodemon
 npm start      # production
-```
 
----
 
