@@ -1,20 +1,34 @@
 const mongoose = require('mongoose');
 
-const connectDB = async () => {
-  try {
-    const uri = process.env.MONGO_URI;
-    if (!uri) throw new Error('MONGO_URI is not set');
+let cached = global.mongoose;
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
 
-    await mongoose.connect(uri, {
-      dbName: process.env.MONGODB_DB || 'studiospace',
+const connectDB = async () => {
+  // If already connected, reuse
+  if (cached.conn) return cached.conn;
+
+  // If connection is in progress, wait for it
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+      serverSelectionTimeoutMS: 10000,
+    };
+    cached.promise = mongoose.connect(process.env.MONGO_URI, opts).then((mongoose) => {
+      console.log('✅ MongoDB connected');
+      return mongoose;
     });
-    console.log(
-      `MongoDB connected (database: ${mongoose.connection.name})`
-    );
-  } catch (err) {
-    console.error('MongoDB error:', err.message);
-    process.exit(1);
   }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (err) {
+    cached.promise = null;
+    throw err;
+  }
+
+  return cached.conn;
 };
 
 module.exports = connectDB;
