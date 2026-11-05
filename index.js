@@ -12,37 +12,16 @@ const errorHandler = require('./src/middleware/errorHandler');
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// ✅ CORS — support multiple origins
-const allowedOrigins = [
-  'http://localhost:3000',
-  process.env.CLIENT_URL,
-].filter(Boolean);
+connectDB();
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (curl, Postman, mobile)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error('Not allowed by CORS'));
-    },
+    origin: process.env.CLIENT_URL || 'http://localhost:3000',
     credentials: true,
   })
 );
-
 app.use(express.json());
 app.use(cookieParser());
-
-// ✅ Ensure DB is connected before every request (serverless-safe)
-app.use(async (req, res, next) => {
-  try {
-    await connectDB();
-    next();
-  } catch (err) {
-    console.error('DB connection failed:', err.message);
-    return res.status(500).json({ message: 'Database connection failed' });
-  }
-});
 
 app.get('/', (req, res) =>
   res.json({ message: 'StudioSpace API running', status: 'ok' })
@@ -56,10 +35,4 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use((req, res) => res.status(404).json({ message: 'Route not found' }));
 app.use(errorHandler);
 
-// ✅ Only listen when running locally (NOT on Vercel)
-if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
-  app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-}
-
-// ✅ MUST export for Vercel serverless
-module.exports = app;
+app.listen(PORT, () => console.log(` Server running on port ${PORT}`));
