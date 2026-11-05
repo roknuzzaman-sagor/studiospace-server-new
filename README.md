@@ -127,6 +127,3 @@ npm start      # production
 
 ---
 
-## 📝 License
-
-MIT
